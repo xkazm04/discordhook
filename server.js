@@ -19,6 +19,4 @@
       res.sendStatus(204)
   })
   
-  app.listen(5000, () =>
-      console.log(`Server listening on port 5000.`)
-  );
+  app.listen();
