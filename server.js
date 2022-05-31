@@ -4,10 +4,17 @@
   const axios = require('axios');
   const express = require('express');
   const { composeSendMessageRequestAxiosConfig } = require('./src/index');
+  const port = 5000;
   
   
   const app = express();
   app.use(express.text({type: 'application/json'}));
+  
+
+  app.get('/', (req, res) => {
+    res.send('Hello World!')
+  })
+
   
   app.post('/', async function (req, res) {
     
@@ -19,4 +26,6 @@
       res.sendStatus(204)
   })
   
-  app.listen();
+  app.listen(port, () => {
+    console.log(`Example app listening on port ${port}`)
+  })
