@@ -4,7 +4,7 @@
   const axios = require('axios');
   const express = require('express');
   const { composeSendMessageRequestAxiosConfig } = require('./src/index');
-  const port = 5000;
+  const port = 3000;
   
   
   const app = express();
