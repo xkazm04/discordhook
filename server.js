@@ -14,12 +14,11 @@
   
 
   app.get('/', (req, res) => {
-    res.send('Hello World!')
+    res.status(200).send('Hello World!');
   })
 
   
   app.post('/', async function (req, res) {
-    
       const request = composeSendMessageRequestAxiosConfig(
           {
               content: `New article added: ${req.body}`, 
