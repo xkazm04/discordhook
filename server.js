@@ -16,7 +16,6 @@
   app.get('/', (req, res) => {
     res.status(200).send('Hello World!');
   })
-
   
   app.post('/', async function (req, res) {
       const request = composeSendMessageRequestAxiosConfig(
@@ -26,6 +25,7 @@
       await axios(request);
       res.sendStatus(204)
   })
+
   
   app.listen(port, () => {
     console.log(`Example app listening on port ${port}`)
