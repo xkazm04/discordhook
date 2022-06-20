@@ -36,7 +36,7 @@ dotenv.config();
         headers: {
             'accept': 'application/json',
             'content-type': 'application/json',
-            'Authorization': `Bearer ${process.env.API_TOKEN}`
+            // 'Authorization': `Bearer ${process.env.API_TOKEN}` -- Endpoint public now without restriction
         },
         data:{
           data:{isSwap: true}
