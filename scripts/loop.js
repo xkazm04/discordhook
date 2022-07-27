@@ -110,6 +110,9 @@ dotenv.config();
        console.log('Events extracted')
       } catch(err){
         console.log('Event extraction failed')
+        fs.writeFile('/scripts/err.txt', err => {
+            console.error('Event extraction error'+ err);
+        });
       }
 
 
@@ -133,6 +136,9 @@ dotenv.config();
         console.log('Functions extracted')
       } catch (err){
         console.log('Function extraction failed')
+        fs.writeFile('/scripts/err.txt', err => {
+          console.error('Function extraction error'+ err);
+      });
       }
 
 
@@ -147,26 +153,32 @@ dotenv.config();
       var secMed = 999;
       var secHigh = 999;
 
-      // if (contractBody && version){
-      //   const pyConfig = {
-      //     url: `${process.env.PY}`,
-      //     headers: {
-      //       accept: 'application/json',
-      //       'content-type': 'application/json',
-      //       // 'Authorization': `Bearer ${process.env.API_TOKEN}` -- Endpoint public now without restriction
-      //     },
-      //     data:{
-      //       contract: contractBody,
-      //       pragma: version
-      //     }
-      //   }
-      //   try {
-      //     const res = await axios.post(pyConfig.url, pyConfig.data, pyConfig.headers)
-      //     console.log(res);
-      //   } catch (err){
-      //     console.log('Slither scan failed')
-      //   }
-      // }
+      if (contractBody && version){
+        const pyConfig = {
+          url: `${process.env.PY}`,
+          headers: {
+            accept: 'application/json',
+            'content-type': 'application/json',
+            // 'Authorization': `Bearer ${process.env.API_TOKEN}` -- Endpoint public now without restriction
+          },
+          data:{
+            sol_contract: contractBody,
+            pragma: version
+          }
+        }
+        try {
+          const res = await axios.post(pyConfig.url, pyConfig.data, pyConfig.headers)
+          console.log(res.data);
+          secOpt = res.data.optimization
+          secInf = res.data.informational
+          secLow = res.data.low
+          secMed = res.data.medium
+          secHigh = res.data.high
+          console.log('Found ' + res.data)
+        } catch (err){
+          console.log('Slither scan failed ')
+        }
+      }
 
       // PUT Pragma version to CMS
       if (findPragma) {
@@ -203,8 +215,11 @@ dotenv.config();
         try{
           await axios.put(config.url, config.data, config.headers);
           console.log(`ID updated: ${contract.id}`);
-        } catch(e){
+        } catch(err){
           console.log('CMS update failed')
+          fs.writeFile('/scripts/err.txt', err => {
+            console.error('CMS API error'+ err);
+        });
         }
       } else {
         console.log(`Contract version not found for ${contract.id}`);
