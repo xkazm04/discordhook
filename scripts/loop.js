@@ -191,6 +191,10 @@ dotenv.config();
               swapWithdraw: withdraw,
               isSwap: false,
               slInf: secInf,
+              slOpt: secOpt,
+              slLow: secLow,
+              slMed: secMed,
+              slHigh: secHigh
 
             },
           },
