@@ -11,12 +11,14 @@ dotenv.config();
   try {
     // const getUrl = `${process.env.CMS_URL}`;
     // const data = await axios.get(getUrl);
+    // query results where something empty
     const data = await axios.get('https://d3v-center.herokuapp.com/api/contracts')
     const contracts = data.data.data;
     const browser = await puppeteer.launch();
 
     // For each contract start procedure
     for (const contract of contracts) {
+
       const page = await browser.newPage();
       page.setDefaultNavigationTimeout(0);
       await page.goto(contract.attributes.reference);
@@ -27,58 +29,148 @@ dotenv.config();
           .querySelector('#repo-content-pjax-container > div > div > div.Box.mt-3.position-relative > div.Box-body.p-0.blob-wrapper.data.type-solidity.gist-border-0')
           .innerText.includes('pragma solidity')
       );
+
+      var swap = false;
+      const findSwap = await page.evaluate(() =>
+      document
+        .querySelector('#repo-content-pjax-container > div > div > div.Box.mt-3.position-relative > div.Box-body.p-0.blob-wrapper.data.type-solidity.gist-border-0')
+        .innerText.includes('function swap')
+    );
+
+      var withdraw = false;
+      const findWithdraw = await page.evaluate(() =>
+      document
+        .querySelector('#repo-content-pjax-container > div > div > div.Box.mt-3.position-relative > div.Box-body.p-0.blob-wrapper.data.type-solidity.gist-border-0')
+        .innerText.includes('function withdraw')
+    );
+
+
+      if (findWithdraw){
+        console.log('Flag extracted: Withdraw')
+        withdraw = true;
+      }
+
+      if (findSwap){
+        console.log('Flag extracted: Swap')
+        swap = true
+      }
       // extract whole body of Github code - done
       const contractBody = await page.$eval(
         "#repo-content-pjax-container > div > div > div.Box.mt-3.position-relative > div.Box-body.p-0.blob-wrapper.data.type-solidity.gist-border-0",
         (element) => element.innerText
       );
-      console.log('Extracted body ' + contractBody);
 
 
-
-
-      // TBD
-      // https://www.digitalocean.com/community/tutorials/how-to-scrape-a-website-using-node-js-and-puppeteer
-
-
-      // 1. Extract row where text contains some string
-      const version = await page.evaluate(() =>
+      // Pragma version extractor
+      const rawVersion = await page.evaluate(() =>
         Array.from(document.querySelectorAll("tr")).filter(rows => rows.innerText.indexOf('pragma') > -1).map(row => row.innerText)
       )
+      var version = ''
+      version = rawVersion[0].trim()
       console.log('Extracted version: '+ version)
 
-      // For each
-      // TBD clean row before posting - Trim, remove first characters
-      // TBD take only first value in array - 
+      // Author metadata extractor
 
-      // 1. Extract row where text contains some string
-      const author = await page.evaluate(() =>
+      const rawAuthor = await page.evaluate(() =>
           Array.from(document.querySelectorAll("tr")).filter(rows => rows.innerText.indexOf('@author') > -1).map(row => row.innerText)
         )
-          console.log('Extracted author: '+ author)
       
-
-      const title = await page.evaluate(() =>
+        var author = ''
+        if (rawAuthor[0]) {
+          author = rawAuthor[0].replace('@author', '').replace('*', '').trim()
+          console.log('Extracted author: '+ author)
+        } 
+   
+      
+      // Title extractor
+      const rawTitle = await page.evaluate(() =>
           Array.from(document.querySelectorAll("tr")).filter(rows => rows.innerText.indexOf('@title') > -1).map(row => row.innerText)
         )
+
+        var title = ''
+        if (rawTitle[0]) {
+          title = rawTitle[0].replace('@title', '').replace('*', '').trim()
           console.log('Extracted title: '+ title)
+        }
+
+      // Event extractor
+      var rawEvents = [];	
+      var newEvents = [];
+
+      try{
+        rawEvents = await page.evaluate(() =>
+        Array.from(document.querySelectorAll("tr")).filter(rows => rows.innerText.indexOf('event') > -1).map(row => row.innerText)
+       )
+      for (const event of rawEvents) {
+        const revent = event.replace('\t','').trim()
+        if (revent.startsWith('event')) {
+          newEvents.push(revent)
+        }
+      }
+       console.log('Events extracted')
+      } catch(err){
+        console.log('Event extraction failed')
+      }
 
 
 
-      // 2. Extract row where text contains some string and add to array
-      // Filter error, cannot use "includes" in this case 
-      // const events = await page.evaluate(() =>
-      //   Array.from(document.querySelectorAll("tr")).filter(rows => rows.innerText.indexOf('event') > -1).map(row => row.innerText)
-      // )
-      // console.log(events)
-    
-       // TBD clean row before posting - Trim, remove first characters
-       // TBD // Clean result - Each row will start with "event"/"function"
 
+      // Function extractor
+      var rawFunctions = [];
+      var newFunctions = [];
+      try {
+        rawFunctions = await page.evaluate(() =>
+        Array.from(document.querySelectorAll("tr")).filter(rows => rows.innerText.indexOf('function') > -1).map(row => row.innerText)
+        )
+
+        for (const fun of rawFunctions) {
+          const refun = fun.replace('\t','').trim()
+          if (refun.startsWith('function')) {
+            newFunctions.push(refun)
+          }
+        }
+
+        console.log('Functions extracted')
+      } catch (err){
+        console.log('Function extraction failed')
+      }
+
+
+
+      console.log('Extracted functions successfully')
+      console.log('Extraction process completed, Starting security evaluation');
+
+
+      var secOpt = 999;
+      var secInf = 999; 
+      var secLow = 999;
+      var secMed = 999;
+      var secHigh = 999;
+
+      // if (contractBody && version){
+      //   const pyConfig = {
+      //     url: `${process.env.PY}`,
+      //     headers: {
+      //       accept: 'application/json',
+      //       'content-type': 'application/json',
+      //       // 'Authorization': `Bearer ${process.env.API_TOKEN}` -- Endpoint public now without restriction
+      //     },
+      //     data:{
+      //       contract: contractBody,
+      //       pragma: version
+      //     }
+      //   }
+      //   try {
+      //     const res = await axios.post(pyConfig.url, pyConfig.data, pyConfig.headers)
+      //     console.log(res);
+      //   } catch (err){
+      //     console.log('Slither scan failed')
+      //   }
+      // }
 
       // PUT Pragma version to CMS
       if (findPragma) {
-        console.log('Found Pragma')
+        console.log('CMS - API update')
         const config = {
           url: `${process.env.CMS_URL}${contract.id}`,
           headers: {
@@ -88,14 +180,30 @@ dotenv.config();
           },
           // Added new colunmns into CMS schama to store arrays: `functions` and `events`
           data: {
-            data: { version: 'pragma version TBD' },
+            data: {  
+              version: version,
+              title: title,
+              author: author,
+              code: contractBody,
+              events: newEvents.toString(),
+              functions: newFunctions.toString(),
+              swapFlag: swap,
+              swapWithdraw: withdraw,
+              isSwap: false,
+              slInf: secInf,
+
+            },
           },
         };
 
-        await axios.put(config.url, config.data, config.headers);
-        console.log(`Pragma updated to ${contract.id}`);
+        try{
+          await axios.put(config.url, config.data, config.headers);
+          console.log(`ID updated: ${contract.id}`);
+        } catch(e){
+          console.log('CMS update failed')
+        }
       } else {
-        console.log(`Pragma not found for ${contract.id}`);
+        console.log(`Contract version not found for ${contract.id}`);
       }
     }
     await browser.close();
