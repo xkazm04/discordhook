@@ -18,7 +18,7 @@
 
   (async () => {
     try {
-      const data = await axios.get(`${process.env.CMS_URL}?pagination[limit]=50000`)
+      const data = await axios.get(`${process.env.CMS_URL}?pagination[limit]=10000`)
       const contracts = data.data.data;
       console.log('Length: '+ contracts.length)
       
