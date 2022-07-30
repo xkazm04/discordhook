@@ -18,11 +18,9 @@
 
   (async () => {
     try {
-      // const getUrl = `${process.env.CMS_URL}`;
-      // const data = await axios.get(getUrl);
-      // query results where something empty
-      const data = await axios.get('https://d3v-center.herokuapp.com/api/contracts?pagination[limit]=5000')
+      const data = await axios.get('http://localhost:1337/api/contracts?pagination[limit]=50000')
       const contracts = data.data.data;
+      console.log('Length: '+ contracts.length)
       
       const browser = await puppeteer.launch();
   
@@ -73,17 +71,21 @@
   
   
   
-  
-  
-  
-  
         // Pragma version extractor
+        var modern = false;
         var version = 'N/A'
         const rawVersion = await page.evaluate(() =>
           Array.from(document.querySelectorAll("tr")).filter(rows => rows.innerText.indexOf('pragma') > -1).map(row => row.innerText)
         )
           try {
+            const regex = /\d{1,2}.[8-9].\d{1,2}/g;
+          
             version = rawVersion[0].trim()
+            const regexVersion = rawVersion[0].match(regex)
+            if (regexVersion){
+              modern = true
+            }
+
             console.log('Extracted version: '+ version)
           } catch (error) {
             console.log('No version found')
@@ -232,7 +234,8 @@
                 slOpt: secOpt,
                 slLow: secLow,
                 slMed: secMed,
-                slHigh: secHigh
+                slHigh: secHigh,
+                modern: modern
   
               },
             },

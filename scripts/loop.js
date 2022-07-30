@@ -6,10 +6,8 @@ dotenv.config();
 
 (async () => {
   try {
-    // const getUrl = `${process.env.CMS_URL}`;
-    // const data = await axios.get(getUrl);
-    // query results where something empty
     const data = await axios.get('https://d3v-center.herokuapp.com/api/contracts?pagination[limit]=5000')
+    
     const contracts = data.data.data;
     
     const browser = await puppeteer.launch();
