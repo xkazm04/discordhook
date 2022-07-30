@@ -12,22 +12,25 @@ dotenv.config();
     // const getUrl = `${process.env.CMS_URL}`;
     // const data = await axios.get(getUrl);
     // query results where something empty
-    const data = await axios.get('https://d3v-center.herokuapp.com/api/contracts')
+    const data = await axios.get('https://d3v-center.herokuapp.com/api/contracts?pagination[limit]=500')
     const contracts = data.data.data;
+    
     const browser = await puppeteer.launch();
 
     // For each contract start procedure
     for (const contract of contracts) {
-
+      if (!contract.attributes.version){
       const page = await browser.newPage();
       page.setDefaultNavigationTimeout(0);
       await page.goto(contract.attributes.reference);
 
-      // marks contract is valid and uses "pragma solidity"
+    
+
+      // marks contract is valid and uses "pragma"
       const findPragma = await page.evaluate(() =>
         document
           .querySelector('#repo-content-pjax-container > div > div > div.Box.mt-3.position-relative > div.Box-body.p-0.blob-wrapper.data.type-solidity.gist-border-0')
-          .innerText.includes('pragma solidity')
+          .innerText.includes('pragma')
       );
 
       var swap = false;
@@ -62,12 +65,17 @@ dotenv.config();
 
 
       // Pragma version extractor
+      var version = 'N/A'
       const rawVersion = await page.evaluate(() =>
         Array.from(document.querySelectorAll("tr")).filter(rows => rows.innerText.indexOf('pragma') > -1).map(row => row.innerText)
       )
-      var version = ''
-      version = rawVersion[0].trim()
-      console.log('Extracted version: '+ version)
+        try {
+          version = rawVersion[0].trim()
+          console.log('Extracted version: '+ version)
+        } catch (error) {
+          console.log('No version found')
+        }
+
 
       // Author metadata extractor
 
@@ -77,8 +85,11 @@ dotenv.config();
       
         var author = ''
         if (rawAuthor[0]) {
-          author = rawAuthor[0].replace('@author', '').replace('*', '').trim()
+          try {author = rawAuthor[0].replace('@author', '').replace('*', '').trim()
           console.log('Extracted author: '+ author)
+        } catch (err) {
+          console.log('Author not found')
+        }
         } 
    
       
@@ -89,8 +100,11 @@ dotenv.config();
 
         var title = ''
         if (rawTitle[0]) {
-          title = rawTitle[0].replace('@title', '').replace('*', '').trim()
+         try{ title = rawTitle[0].replace('@title', '').replace('*', '').trim()
           console.log('Extracted title: '+ title)
+        }catch(e){
+          console.log('Error extracting title')
+        }
         }
 
       // Event extractor
@@ -174,7 +188,6 @@ dotenv.config();
           secLow = res.data.low
           secMed = res.data.medium
           secHigh = res.data.high
-          console.log('Found ' + res.data)
         } catch (err){
           console.log('Slither scan failed ')
         }
@@ -223,13 +236,14 @@ dotenv.config();
         }
       } else {
         console.log(`Contract version not found for ${contract.id}`);
-      }
+      }} 
     }
     await browser.close();
   } catch (error) {
     console.log(Object.keys(error), error.message);
   }
-})();
+})
+();
 
 
 // Upravit schema - Přidat arraye -> Rich text probably
