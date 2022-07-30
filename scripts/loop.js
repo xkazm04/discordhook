@@ -2,9 +2,6 @@ const puppeteer = require('puppeteer');
 const axios = require('axios');
 const dotenv = require('dotenv');
 
-// 0. Extract row where text content = "pragma solidity" and add to array
-// 1. Extract row where text content = "function" or "event" and add to array
-// 2. Take whole body and save into variable  source: "Box-body p-0 blob-wrapper data type-solidity  gist-border-0," Selector    #repo-content-pjax-container > div > div > div.Box.mt-3.position-relative > div.Box-body.p-0.blob-wrapper.data.type-solidity.gist-border-0
 dotenv.config();
 
 (async () => {
@@ -12,7 +9,7 @@ dotenv.config();
     // const getUrl = `${process.env.CMS_URL}`;
     // const data = await axios.get(getUrl);
     // query results where something empty
-    const data = await axios.get('https://d3v-center.herokuapp.com/api/contracts?pagination[limit]=500')
+    const data = await axios.get('https://d3v-center.herokuapp.com/api/contracts?pagination[limit]=5000')
     const contracts = data.data.data;
     
     const browser = await puppeteer.launch();
@@ -27,41 +24,45 @@ dotenv.config();
     
 
       // marks contract is valid and uses "pragma"
-      const findPragma = await page.evaluate(() =>
+      var withdraw = false;
+      var swap = false;
+      var findPragma = true;
+      var contractBody = ''
+      
+      try{
+        const findSwap = await page.evaluate(() =>
         document
           .querySelector('#repo-content-pjax-container > div > div > div.Box.mt-3.position-relative > div.Box-body.p-0.blob-wrapper.data.type-solidity.gist-border-0')
-          .innerText.includes('pragma')
+          .innerText.includes('function swap')
       );
+          const findWithdraw = await page.evaluate(() =>
+          document
+            .querySelector('#repo-content-pjax-container > div > div > div.Box.mt-3.position-relative > div.Box-body.p-0.blob-wrapper.data.type-solidity.gist-border-0')
+            .innerText.includes('function withdraw')
+        );
+          // extract whole body of Github code - done
+          contractBody = await page.$eval(
+            "#repo-content-pjax-container > div > div > div.Box.mt-3.position-relative > div.Box-body.p-0.blob-wrapper.data.type-solidity.gist-border-0",
+            (element) => element.innerText
+          );
 
-      var swap = false;
-      const findSwap = await page.evaluate(() =>
-      document
-        .querySelector('#repo-content-pjax-container > div > div > div.Box.mt-3.position-relative > div.Box-body.p-0.blob-wrapper.data.type-solidity.gist-border-0')
-        .innerText.includes('function swap')
-    );
-
-      var withdraw = false;
-      const findWithdraw = await page.evaluate(() =>
-      document
-        .querySelector('#repo-content-pjax-container > div > div > div.Box.mt-3.position-relative > div.Box-body.p-0.blob-wrapper.data.type-solidity.gist-border-0')
-        .innerText.includes('function withdraw')
-    );
-
-
-      if (findWithdraw){
-        console.log('Flag extracted: Withdraw')
-        withdraw = true;
+        if (findWithdraw){
+          console.log('Flag extracted: Withdraw')
+          withdraw = true;
+        }
+  
+        if (findSwap){
+          console.log('Flag extracted: Swap')
+          swap = true
+        }
+      } catch(e){
+        console.log('Element not extracted')
       }
 
-      if (findSwap){
-        console.log('Flag extracted: Swap')
-        swap = true
-      }
-      // extract whole body of Github code - done
-      const contractBody = await page.$eval(
-        "#repo-content-pjax-container > div > div > div.Box.mt-3.position-relative > div.Box-body.p-0.blob-wrapper.data.type-solidity.gist-border-0",
-        (element) => element.innerText
-      );
+
+
+
+
 
 
       // Pragma version extractor
@@ -245,5 +246,3 @@ dotenv.config();
 })
 ();
 
-
-// Upravit schema - Přidat arraye -> Rich text probably
